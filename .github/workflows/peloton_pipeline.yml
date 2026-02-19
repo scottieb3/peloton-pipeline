@@ -1,0 +1,60 @@
+name: Peloton Data Pipeline
+
+on:
+  schedule:
+    # Run daily at 6:00 AM UTC (adjust as needed)
+    - cron: '0 6 * * *'
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Create tokens file
+        env:
+          TOKENS_JSON: ${{ secrets.PELOTON_TOKENS_JSON }}
+        run: |
+          if [ -s peloton_tokens.json ]; then
+            echo "peloton_tokens.json exists and is not empty. Using repository version."
+          else
+            echo "peloton_tokens.json missing or empty. Creating from Secret."
+            echo "$TOKENS_JSON" > peloton_tokens.json
+          fi
+
+      - name: Run pipeline
+        env:
+          MOTHERDUCK_TOKEN: ${{ secrets.MOTHERDUCK_TOKEN }}
+        run: python peloton_pipeline.py
+
+      - name: Commit and push updated tokens
+        # Only run if peloton_tokens.json has changed
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          
+          # Check for changes in peloton_tokens.json
+          if git diff --quiet peloton_tokens.json; then
+            echo "No changes to tokens file."
+          else
+            echo "Tokens file changed. Committing update..."
+            # Force add in case it is ignored in .gitignore
+            git add -f peloton_tokens.json
+            git commit -m "Update Peloton tokens [skip ci]"
+            git push
+          fi
