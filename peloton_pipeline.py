@@ -15,6 +15,7 @@ from datetime import datetime, timezone
 import requests
 import duckdb
 import pandas as pd
+from dotenv import load_dotenv
 
 # Import the token exchange module
 import peloton_token_exchange as auth
@@ -26,6 +27,9 @@ logging.basicConfig(
     datefmt='%H:%M:%S'
 )
 logger = logging.getLogger(__name__)
+
+# Load .env file (for local MOTHERDUCK_TOKEN, etc.)
+load_dotenv()
 
 # Constants
 MD_DB = "digma_demo"
@@ -49,10 +53,10 @@ def get_valid_auth_headers() -> dict:
         sys.exit(1)
         
     # 2. Check expiration
-    # Refresh if expired or expires in less than 5 minutes (300 seconds)
+    # Refresh if expired or expires in less than 1 day
     now = time.time()
     expires_at = tokens.get("expires_at", 0)
-    buffer_seconds = 300 
+    buffer_seconds = 86400 
     
     if now >= (expires_at - buffer_seconds):
         logger.info("Token is expired or expiring soon. Refreshing...")
