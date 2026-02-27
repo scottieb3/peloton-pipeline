@@ -30,31 +30,22 @@ jobs:
         env:
           TOKENS_JSON: ${{ secrets.PELOTON_TOKENS_JSON }}
         run: |
-          if [ -s peloton_tokens.json ]; then
-            echo "peloton_tokens.json exists and is not empty. Using repository version."
-          else
-            echo "peloton_tokens.json missing or empty. Creating from Secret."
-            echo "$TOKENS_JSON" > peloton_tokens.json
-          fi
+          echo "$TOKENS_JSON" > peloton_tokens.json
 
       - name: Run pipeline
         env:
           MOTHERDUCK_TOKEN: ${{ secrets.MOTHERDUCK_TOKEN }}
         run: python peloton_pipeline.py
 
-      - name: Commit and push updated tokens
-        # Only run if peloton_tokens.json has changed
+      - name: Persist refreshed tokens to GitHub Secret
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-          
-          # Check for changes in peloton_tokens.json
-          if git diff --quiet peloton_tokens.json; then
-            echo "No changes to tokens file."
+          if [ -s peloton_tokens.json ]; then
+            echo "Updating PELOTON_TOKENS_JSON secret with refreshed tokens..."
+            gh secret set PELOTON_TOKENS_JSON --repo "$GITHUB_REPOSITORY" < peloton_tokens.json
+            echo "Secret updated successfully."
           else
-            echo "Tokens file changed. Committing update..."
-            # Force add in case it is ignored in .gitignore
-            git add -f peloton_tokens.json
-            git commit -m "Update Peloton tokens [skip ci]"
-            git push
+            echo "No tokens file found. Skipping secret update."
           fi
