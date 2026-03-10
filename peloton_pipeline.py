@@ -265,7 +265,7 @@ def run_pipeline(headers: dict):
         logger.info(f"Authenticated as User ID: {user_id}")
     except Exception as e:
         logger.error(f"Failed to get user info: {e}")
-        return
+        raise
 
     # 3. Connect to MotherDuck & Get Cutoff Date
     con = None
@@ -280,7 +280,7 @@ def run_pipeline(headers: dict):
         logger.error(f"MotherDuck connection failed: {e}")
         if con:
             con.close()
-        return
+        raise
 
     # 4. Fetch Data
     try:
@@ -302,6 +302,7 @@ def run_pipeline(headers: dict):
         
     except Exception as e:
         logger.error(f"Pipeline execution failed: {e}")
+        raise
     finally:
         if con:
             con.close()
@@ -309,11 +310,17 @@ def run_pipeline(headers: dict):
 def main():
     logger.info("Initializing Peloton Pipeline...")
     
-    # Get valid headers (refreshing if necessary)
-    headers = get_valid_auth_headers()
-    
-    # Run the pipeline
-    run_pipeline(headers)
+    try:
+        # Get valid headers (refreshing if necessary)
+        headers = get_valid_auth_headers()
+        
+        # Run the pipeline
+        run_pipeline(headers)
+    except SystemExit:
+        raise
+    except Exception as e:
+        logger.error(f"Pipeline failed: {e}")
+        sys.exit(1)
     
     logger.info("Pipeline completed.")
 
