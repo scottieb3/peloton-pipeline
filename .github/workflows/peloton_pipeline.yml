@@ -44,8 +44,19 @@ jobs:
         run: |
           if [ -s peloton_tokens.json ]; then
             echo "Updating PELOTON_TOKENS_JSON secret with refreshed tokens..."
-            gh secret set PELOTON_TOKENS_JSON --repo "$GITHUB_REPOSITORY" < peloton_tokens.json
-            echo "Secret updated successfully."
+            max_attempts=3
+            for attempt in $(seq 1 $max_attempts); do
+              if gh secret set PELOTON_TOKENS_JSON --repo "$GITHUB_REPOSITORY" < peloton_tokens.json; then
+                echo "Secret updated successfully."
+                break
+              fi
+              if [ "$attempt" -eq "$max_attempts" ]; then
+                echo "::error::Failed to update secret after $max_attempts attempts. Token chain may be broken!"
+                exit 1
+              fi
+              echo "Attempt $attempt failed. Retrying in 10 seconds..."
+              sleep 10
+            done
           else
-            echo "No tokens file found. Skipping secret update."
+            echo "::error::No tokens file found. Skipping secret update."
           fi
