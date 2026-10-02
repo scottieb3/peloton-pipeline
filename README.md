@@ -42,3 +42,19 @@ A robust data pipeline that fetches your Peloton workout history and syncs it to
 
 2.  **Workflow**:
     The pipeline is configured to run daily at 6:00 AM UTC via `.github/workflows/peloton_pipeline.yml`. After each run, it automatically updates the `PELOTON_TOKENS_JSON` secret with the refreshed tokens so the next run has a valid refresh token.
+
+## Token Recovery (invalid_grant / "Unknown or invalid refresh token")
+
+If the refresh-token chain breaks (e.g., the Action fails for several consecutive days, or tokens were rotated elsewhere), refresh can no longer recover on its own. Re-seed it:
+
+1.  Ensure `.env` contains `PELOTON_USERNAME` and `PELOTON_PASSWORD`.
+2.  Mint fresh tokens (headless login, no browser needed):
+    ```bash
+    python peloton_login.py
+    ```
+3.  Update the GitHub secret with the new file:
+    ```bash
+    gh secret set PELOTON_TOKENS_JSON --repo <owner>/<repo> < peloton_tokens.json
+    ```
+    (Or paste the file contents into the secret via repo Settings → Secrets → Actions.)
+4.  Trigger the workflow manually (Actions → Peloton Data Pipeline → Run workflow) to verify.
