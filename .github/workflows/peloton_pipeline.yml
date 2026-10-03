@@ -1,10 +1,11 @@
 name: Peloton Data Pipeline
 
+# DEPRECATED: This repo is no longer live. The canonical pipeline runs in
+# scottieb3/peloton-motherduck. Do NOT re-enable triggers here — this workflow
+# shares the Peloton refresh-token chain, and any run rotates the token and
+# breaks the canonical pipeline's secret.
 on:
-  schedule:
-    # Run daily at 6:00 AM UTC (adjust as needed)
-    - cron: '0 6 * * *'
-  workflow_dispatch:  # Allow manual triggering
+  workflow_dispatch:  # manual only; running this will break peloton-motherduck's token chain
 
 jobs:
   run-pipeline:

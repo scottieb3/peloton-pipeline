@@ -1,4 +1,8 @@
-# Peloton Data Pipeline
+# Peloton Data Pipeline (DEPRECATED)
+
+> **This repo is no longer live.** The canonical pipeline is `scottieb3/peloton-motherduck`.
+> The scheduled workflow has been disabled. Do not run the pipeline or workflow here —
+> it shares the Peloton refresh-token chain, and any run will break the canonical repo's secret.
 
 A robust data pipeline that fetches your Peloton workout history and syncs it to a MotherDuck database.
 
